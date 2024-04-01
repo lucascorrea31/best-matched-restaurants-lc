@@ -1,60 +1,51 @@
 package org.alphasights.techassessment.bo;
 
-import java.util.UUID;
+import org.alphasights.techassessment.dao.CuisineDAO;
+import org.alphasights.techassessment.dao.RestaurantDAO;
+import org.alphasights.techassessment.models.Cuisine;
+import org.alphasights.techassessment.models.Restaurant;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class BORestaurant {
-    private UUID id;
-    private String name;
-    private double customerRating;
-    private double distance;
-    private double price;
-    private BOCuisine cuisine;
+    private static final Logger LOGGER = Logger.getLogger(BORestaurant.class.getName());
 
-    public UUID getId() {
-        return id;
+    public static Restaurant get(int id) {
+        try {
+            RestaurantDAO restaurantDAO = new RestaurantDAO();
+
+            return restaurantDAO.get(String.valueOf(id)).orElse(null);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Error getting restaurant with id [" + id + "] from the DB", e);
+        }
+
+        return null;
     }
 
-    public void setId(UUID id) {
-        this.id = id;
+    public static List<Restaurant> getAll() {
+        try {
+            RestaurantDAO restaurantDAO = new RestaurantDAO();
+
+            return restaurantDAO.getAll().orElse(new ArrayList<>());
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Error getting all restaurants from the DB", e);
+        }
+
+        return new ArrayList<>();
     }
 
-    public String getName() {
-        return name;
-    }
+    public static List<Restaurant> searchByName(String name) {
+        try {
+            RestaurantDAO restaurantDAO = new RestaurantDAO();
 
-    public void setName(String name) {
-        this.name = name;
-    }
+            return restaurantDAO.search("name", name.split(" ")).orElse(new ArrayList<>());
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Error searching for restaurant by name in the DB", e);
+        }
 
-    public double getCustomerRating() {
-        return customerRating;
-    }
-
-    public void setCustomerRating(double customerRating) {
-        this.customerRating = customerRating;
-    }
-
-    public double getDistance() {
-        return distance;
-    }
-
-    public void setDistance(double distance) {
-        this.distance = distance;
-    }
-
-    public double getPrice() {
-        return price;
-    }
-
-    public void setPrice(double price) {
-        this.price = price;
-    }
-
-    public BOCuisine getCuisine() {
-        return cuisine;
-    }
-
-    public void setCuisine(BOCuisine cuisine) {
-        this.cuisine = cuisine;
+        return new ArrayList<>();
     }
 }

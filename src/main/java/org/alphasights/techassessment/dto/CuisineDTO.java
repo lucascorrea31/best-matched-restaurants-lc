@@ -1,8 +1,15 @@
 package org.alphasights.techassessment.dto;
 
 import org.alphasights.techassessment.bo.BOCuisine;
+import org.alphasights.techassessment.models.Cuisine;
+import org.alphasights.techassessment.models.Restaurant;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 public class CuisineDTO {
     private int id;
@@ -42,25 +49,39 @@ public class CuisineDTO {
         return Objects.equals(name, that.name);
     }
 
-    public BOCuisine toBO() {
-        BOCuisine cuisine = new BOCuisine();
+    public Cuisine toModel() {
+        Cuisine cuisine = new Cuisine();
         cuisine.setId(this.id);
         cuisine.setName(this.name);
         return cuisine;
     }
 
-    public static CuisineDTO fromBO(BOCuisine cuisine) {
+    public static CuisineDTO fromModel(Cuisine cuisine) {
         CuisineDTO cuisineDTO = new CuisineDTO();
         cuisineDTO.setId(cuisine.getId());
         cuisineDTO.setName(cuisine.getName());
         return cuisineDTO;
     }
 
-    @Override
-    public String toString() {
-        return "CuisineDTO{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                '}';
+    public static List<Cuisine> extractListFromResultSet(ResultSet results) throws SQLException {
+        List<Cuisine> cuisines = new ArrayList<>();
+
+        while (results.next()) {
+            CuisineDTO cuisineDTO = new CuisineDTO(results.getInt("id"), results.getString("name"));
+
+            cuisines.add(cuisineDTO.toModel());
+        }
+
+        return cuisines;
+    }
+
+    public static Cuisine extractFromResultSet(ResultSet result) throws SQLException {
+        if (result.next()) {
+            CuisineDTO cuisineDTO = new CuisineDTO(result.getInt("id"), result.getString("name"));
+
+            return cuisineDTO.toModel();
+        }
+
+        return null;
     }
 }
