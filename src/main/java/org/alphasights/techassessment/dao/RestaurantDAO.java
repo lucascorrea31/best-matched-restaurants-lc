@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,21 +23,37 @@ public class RestaurantDAO implements Dao<Restaurant> {
         connection = DBConnection.getConnection();
     }
 
-    public Optional<List<Restaurant>> search(String column, String[] needle) {
-        return search(column, String.join("%", needle));
-    }
-
-    public Optional<List<Restaurant>> search(String column, String needle) {
+    public Optional<List<Restaurant>> search(Map<String, String> filters) {
         try {
-            String query = "SELECT r.*, c.name as cuisine_name FROM " + Constants.RESTAURANT_TABLE + " r LEFT JOIN " + Constants.CUISINE_TABLE + " c ON r.cuisine_id = c.id WHERE ? LIKE ?;";
+            StringBuilder query = new StringBuilder();
+            query.append("SELECT r.*, c.name as cuisine_name FROM ");
+            query.append(Constants.RESTAURANT_TABLE);
+            query.append(" r LEFT JOIN ");
+            query.append(Constants.CUISINE_TABLE);
+            query.append(" c ON r.cuisine_id = c.id ");
+            query.append(" WHERE ");
+            query.append("lower(r.name) LIKE ? AND ");
+            query.append("r.customer_rating >= ? AND ");
+            query.append("r.distance <= ? AND ");
+            query.append("r.price <= ? AND ");
+            query.append("lower(c.name) LIKE ? ");
+            query.append(" ORDER BY ");
+            query.append("r.distance ASC, ");
+            query.append("r.customer_rating DESC, ");
+            query.append("r.price ASC ");
+            query.append("LIMIT 5;");
 
-            PreparedStatement stmt = connection.prepareStatement(query, new String[]{column, "%" + needle + "%"});
-            stmt.setString(1, "r." + column);
+            PreparedStatement stmt = connection.prepareStatement(query.toString());
+            stmt.setString(1, "%" + filters.get("name").toLowerCase() + "%");
+            stmt.setInt(2, Integer.parseInt(filters.get("customer_rating")));
+            stmt.setInt(3, Integer.parseInt(filters.get("distance")));
+            stmt.setInt(4, Integer.parseInt(filters.get("price")));
+            stmt.setString(5, "%" + filters.get("cuisine").toLowerCase() + "%");
             ResultSet results = stmt.executeQuery();
 
             return Optional.of(RestaurantDTO.extractListFromResultSet(results));
         } catch (Exception e) {
-            LOGGER.log(Level.FINE, "Error searching restaurant with /" + needle + "/", e);
+            LOGGER.log(Level.FINE, "Error searching restaurant", e);
         }
 
         return Optional.empty();

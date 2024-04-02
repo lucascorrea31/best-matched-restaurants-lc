@@ -1,11 +1,13 @@
 package org.alphasights.techassessment.services;
 
 import org.alphasights.techassessment.bo.BORestaurant;
-import org.alphasights.techassessment.models.Restaurant;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedMap;
 import java.util.Objects;
 
 @Path("restaurants")
@@ -27,10 +29,29 @@ public class ServiceRestaurant extends ServiceBase {
     }
 
     @GET
-    @Path("search/{name}")
+    @Path("search")
     @Produces(ApplicationConfig.APPLICATION_JSON_CHARSET_UTF8)
     @Consumes(ApplicationConfig.APPLICATION_JSON_CHARSET_UTF8)
-    public String getByName(@PathParam("name") String name) {
-        return Objects.requireNonNullElse(BORestaurant.searchByName(name), new JSONObject()).toString();
+    public String search(@Context HttpHeaders hh) {
+        MultivaluedMap<String, String> headerParams = hh.getRequestHeaders();
+
+        JSONObject filters = new JSONObject();
+        if (headerParams.containsKey("name")) {
+            filters.put("name", headerParams.getFirst("name"));
+        }
+        if (headerParams.containsKey("customer_rating")) {
+            filters.put("customer_rating", headerParams.getFirst("customer_rating"));
+        }
+        if (headerParams.containsKey("distance")) {
+            filters.put("distance", headerParams.getFirst("distance"));
+        }
+        if (headerParams.containsKey("price")) {
+            filters.put("price", headerParams.getFirst("price"));
+        }
+        if (headerParams.containsKey("cuisine")) {
+            filters.put("cuisine", headerParams.getFirst("cuisine"));
+        }
+
+        return Objects.requireNonNullElse(BORestaurant.search(filters), new JSONObject()).toString();
     }
 }
