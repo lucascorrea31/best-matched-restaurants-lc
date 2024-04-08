@@ -1,13 +1,15 @@
 package org.alphasights.techassessment.dto;
 
-import org.alphasights.techassessment.bo.BOCuisine;
-import org.alphasights.techassessment.bo.BORestaurant;
+import org.alphasights.techassessment.models.Cuisine;
+import org.alphasights.techassessment.models.Restaurant;
 
-import java.util.Objects;
-import java.util.UUID;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RestaurantDTO {
-    private UUID id;
+    private int id;
     private String name;
     private double customerRating;
     private double distance;
@@ -18,7 +20,7 @@ public class RestaurantDTO {
     public RestaurantDTO() {
     }
 
-    public RestaurantDTO(UUID id, String name, double customerRating, double distance, double price) {
+    public RestaurantDTO(int id, String name, double customerRating, double distance, double price) {
         setId(id);
         setName(name);
         setCustomerRating(customerRating);
@@ -26,7 +28,7 @@ public class RestaurantDTO {
         setPrice(price);
     }
 
-    public RestaurantDTO(UUID id, String name, double customerRating, double distance, double price, int cuisineId, String cuisineName) {
+    public RestaurantDTO(int id, String name, double customerRating, double distance, double price, int cuisineId, String cuisineName) {
         setId(id);
         setName(name);
         setCustomerRating(customerRating);
@@ -36,7 +38,7 @@ public class RestaurantDTO {
         setCuisineName(cuisineName);
     }
 
-    public RestaurantDTO(UUID id, String name, double customerRating, double distance, double price, BOCuisine cuisine) {
+    public RestaurantDTO(int id, String name, double customerRating, double distance, double price, Cuisine cuisine) {
         setId(id);
         setName(name);
         setCustomerRating(customerRating);
@@ -48,12 +50,12 @@ public class RestaurantDTO {
         }
     }
 
-    public UUID getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(UUID id) {
-        this.id = Objects.requireNonNullElseGet(id, UUID::randomUUID);
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -110,16 +112,16 @@ public class RestaurantDTO {
 
         RestaurantDTO that = (RestaurantDTO) o;
 
+        if (id != that.id && id != 0) return false;
         if (Double.compare(that.customerRating, customerRating) != 0) return false;
         if (Double.compare(that.distance, distance) != 0) return false;
         if (Double.compare(that.price, price) != 0) return false;
         if (cuisineId != that.cuisineId) return false;
-        if (!id.equals(that.id)) return false;
         return name.equals(that.name);
     }
 
-    public BORestaurant toBO() {
-        BORestaurant restaurant = new BORestaurant();
+    public Restaurant toModel() {
+        Restaurant restaurant = new Restaurant();
         restaurant.setId(getId());
         restaurant.setName(getName());
         restaurant.setCustomerRating(getCustomerRating());
@@ -127,7 +129,7 @@ public class RestaurantDTO {
         restaurant.setPrice(getPrice());
 
         if (this.cuisineName != null) {
-            BOCuisine cuisine = new BOCuisine();
+            Cuisine cuisine = new Cuisine();
             cuisine.setId(getCuisineId());
             cuisine.setName(getCuisineName());
             restaurant.setCuisine(cuisine);
@@ -136,7 +138,7 @@ public class RestaurantDTO {
         return restaurant;
     }
 
-    public static RestaurantDTO fromBO(BORestaurant restaurant) {
+    public static RestaurantDTO fromModel(Restaurant restaurant) {
         RestaurantDTO restaurantDTO = new RestaurantDTO();
         restaurantDTO.setId(restaurant.getId());
         restaurantDTO.setName(restaurant.getName());
@@ -152,16 +154,41 @@ public class RestaurantDTO {
         return restaurantDTO;
     }
 
-    @Override
-    public String toString() {
-        return "RestaurantDTO{" +
-                "id=" + getId() +
-                ", name='" + getName() + '\'' +
-                ", customerRating=" + getCustomerRating() +
-                ", distance=" + getDistance() +
-                ", price=" + getPrice() +
-                ", cuisineId=" + getCuisineId() +
-                ", cuisineName=" + getCuisineName() +
-                '}';
+    public static List<Restaurant> extractListFromResultSet(ResultSet results) throws SQLException {
+        List<Restaurant> restaurants = new ArrayList<>();
+
+        while (results.next()) {
+            CuisineDTO cuisineDTO = new CuisineDTO(results.getInt("cuisine_id"), results.getString("cuisine_name"));
+            RestaurantDTO restaurantDTO = new RestaurantDTO(
+                    results.getInt("id"),
+                    results.getString("name"),
+                    results.getDouble("customer_rating"),
+                    results.getDouble("distance"),
+                    results.getDouble("price"),
+                    cuisineDTO.toModel()
+            );
+
+            restaurants.add(restaurantDTO.toModel());
+        }
+
+        return restaurants;
+    }
+
+    public static Restaurant extractFromResultSet(ResultSet result) throws SQLException {
+        if (result.next()) {
+            CuisineDTO cuisineDTO = new CuisineDTO(result.getInt("cuisine_id"), result.getString("cuisine_name"));
+            RestaurantDTO restaurantDTO = new RestaurantDTO(
+                    result.getInt("id"),
+                    result.getString("name"),
+                    result.getDouble("customer_rating"),
+                    result.getDouble("distance"),
+                    result.getDouble("price"),
+                    cuisineDTO.toModel()
+            );
+
+            return restaurantDTO.toModel();
+        }
+
+        return null;
     }
 }

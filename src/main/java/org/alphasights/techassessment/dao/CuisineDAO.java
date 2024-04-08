@@ -1,23 +1,21 @@
 package org.alphasights.techassessment.dao;
 
-import org.alphasights.techassessment.bo.BOCuisine;
 import org.alphasights.techassessment.db.DBConnection;
 import org.alphasights.techassessment.dto.CuisineDTO;
+import org.alphasights.techassessment.models.Cuisine;
 import org.alphasights.techassessment.util.Constants;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class CuisineDAO implements Dao<BOCuisine> {
-    private static final Logger LOGGER =
-            Logger.getLogger(CuisineDAO.class.getName());
+public class CuisineDAO implements Dao<Cuisine> {
+    private static final Logger LOGGER = Logger.getLogger(CuisineDAO.class.getName());
     private final Connection connection;
 
     public CuisineDAO() {
@@ -25,19 +23,16 @@ public class CuisineDAO implements Dao<BOCuisine> {
     }
 
     @Override
-    public Optional<BOCuisine> get(String id) {
+    public Optional<Cuisine> get(String id) {
         try {
             String query = "SELECT * FROM " + Constants.CUISINE_TABLE + " WHERE id = ?";
 
-            ResultSet result = connection
-                    .prepareStatement(query, new String[]{id})
-                    .executeQuery();
+            PreparedStatement stmt = connection.prepareStatement(query);
+            stmt.setInt(1, Integer.parseInt(id));
 
-            if (result.first()) {
-                CuisineDTO cuisineDTO = new CuisineDTO(result.getInt("id"), result.getString("name"));
+            ResultSet result = stmt.executeQuery();
 
-                return Optional.of(cuisineDTO.toBO());
-            }
+            return Optional.ofNullable(CuisineDTO.extractFromResultSet(result));
         } catch (Exception e) {
             LOGGER.log(Level.FINE, "Error getting cuisine with id [" + id + "]", e);
         }
@@ -46,7 +41,7 @@ public class CuisineDAO implements Dao<BOCuisine> {
     }
 
     @Override
-    public List<BOCuisine> getAll() {
+    public Optional<List<Cuisine>> getAll() {
         try {
             String query = "SELECT * FROM " + Constants.CUISINE_TABLE;
 
@@ -54,24 +49,16 @@ public class CuisineDAO implements Dao<BOCuisine> {
                     .prepareStatement(query)
                     .executeQuery();
 
-            List<BOCuisine> cuisines = new ArrayList<>();
-
-            while (results.next()) {
-                CuisineDTO cuisineDTO = new CuisineDTO(results.getInt("id"), results.getString("name"));
-
-                cuisines.add(cuisineDTO.toBO());
-            }
-
-            return cuisines;
+            return Optional.of(CuisineDTO.extractListFromResultSet(results));
         } catch (Exception e) {
             LOGGER.log(Level.FINE, "Error getting all cuisines", e);
         }
 
-        return new ArrayList<>();
+        return Optional.empty();
     }
 
     @Override
-    public Optional<BOCuisine> save(BOCuisine cuisine) {
+    public Optional<Cuisine> save(Cuisine cuisine) {
         try {
             String query = "INSERT INTO " + Constants.CUISINE_TABLE + " (id, name) VALUES (?, ?);";
 
@@ -107,7 +94,7 @@ public class CuisineDAO implements Dao<BOCuisine> {
     }
 
     @Override
-    public Optional<BOCuisine> update(BOCuisine cuisine, String[] params) {
+    public Optional<Cuisine> update(Cuisine cuisine, String[] params) {
         try {
             String query = "UPDATE " + Constants.CUISINE_TABLE + " SET name = ? WHERE id = ?;";
 
@@ -134,7 +121,7 @@ public class CuisineDAO implements Dao<BOCuisine> {
     }
 
     @Override
-    public boolean delete(BOCuisine cuisine) {
+    public boolean delete(Cuisine cuisine) {
         try {
             String query = "DELETE FROM " + Constants.CUISINE_TABLE + " WHERE id = ?;";
 

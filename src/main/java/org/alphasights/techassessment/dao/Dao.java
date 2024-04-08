@@ -7,7 +7,7 @@ public interface Dao<T> {
 
     Optional<T> get(String id);
 
-    List<T> getAll();
+    Optional<List<T>> getAll();
 
     Optional<T> save(T t);
 
